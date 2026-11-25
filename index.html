@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOLVE: Sparse, Ordered Keyposes for LLM Robot Agents</title>
+<meta name="description" content="SOLVE is a training-free LLM agent that controls robots by writing sparse, ordered end-effector keyposes. 74.5% on RoboDojo, 84.5% on RoboLab, 88% on a real UR12e.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <a class="brand" href="#top"><svg viewBox="0 0 44 16" aria-hidden="true"><polyline points="3,12 14,4 26,11 41,3"/><circle cx="3" cy="12" r="2.6"/><circle cx="14" cy="4" r="2.6"/><circle cx="26" cy="11" r="2.6"/><circle cx="41" cy="3" r="2.6"/></svg>SOLVE</a>
+  <nav>
+    <a href="#demos">Demos</a><a href="#idea">Idea</a><a href="#method">Method</a><a href="#results">Results</a><a href="#sim">Simulation</a><a href="#cite">Cite</a>
+  </nav>
+</header>
+
+<!-- ───────────── HERO ───────────── -->
+<section class="hero" id="top">
+  <video class="hero-video" autoplay muted loop playsinline poster="assets/poster/hero.jpg" src="assets/video/hero.mp4"></video>
+  <div class="hero-shade"></div>
+  <svg class="hero-path" viewBox="0 0 1200 640" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <polyline pathLength="1" points="70,470 300,250 520,330 760,150 960,300 1140,120"/>
+    <g class="kp"><circle cx="70" cy="470" r="6"/><text x="84" y="494">k1</text></g>
+    <g class="kp"><circle cx="300" cy="250" r="6"/><text x="314" y="244">k2</text></g>
+    <g class="kp"><circle cx="520" cy="330" r="6"/><text x="534" y="354">k3</text></g>
+    <g class="kp"><circle cx="760" cy="150" r="6"/><text x="774" y="144">k4</text></g>
+    <g class="kp"><circle cx="960" cy="300" r="6"/><text x="974" y="324">k5</text></g>
+    <g class="kp"><circle cx="1140" cy="120" r="6"/><text x="1098" y="104">k6</text></g>
+  </svg>
+
+  <div class="hero-inner wrap">
+    <p class="eyebrow">Training-free · LLM agent · robot manipulation</p>
+    <h1>SOLVE</h1>
+    <p class="hero-sub"><em>Sparse, ordered keyposes</em> make LLM agents versatile and efficient robot manipulators.</p>
+    <div class="authors">
+      <p class="names">
+      <span>Xiang Li<sup>1,2*</sup></span>
+      <span>Hongyu Zhou<sup>2*</sup></span>
+      <span>Ya-Li Li<sup>1</sup></span>
+      <span>Tao Li<sup>2</sup></span>
+      <span>Rui Zhang<sup>2</sup></span>
+      <span>Junjie Lai<sup>2</sup></span>
+      <span>Weihua Zhang<sup>2‡</sup></span>
+      <span>Shengjin Wang<sup>1‡</sup></span>
+      </p>
+      <p class="affil"><span><sup>1</sup>Department of Electronic Engineering, Tsinghua University</span><span><sup>2</sup>NVIDIA</span></p>
+    </div>
+    <div class="cta">
+      <a class="btn primary" href="#demos">Watch the robot</a>
+      <a class="btn" href="#" data-soon>Paper</a>
+      <a class="btn" href="#" data-soon>Code</a>
+    </div>
+  </div>
+
+  <div class="hero-stats wrap">
+    <div><b>74.5<i>%</i></b><span>RoboDojo-Sim<br>best on the leaderboard</span></div>
+    <div><b>84.5<i>%</i></b><span>RoboLab-120<br>+27.4 pts over the best entry</span></div>
+    <div><b>88<i>%</i></b><span>real UR12e, zero-shot<br>75 of 85 episodes, 16 tasks</span></div>
+    <div><b><i>$</i>1.7</b><span>per episode<br>12× cheaper than step-wise</span></div>
+  </div>
+</section>
+
+<!-- ───────────── ABSTRACT ───────────── -->
+<section class="lede wrap">
+  <p class="label">00 — In one paragraph</p>
+  <p class="big">A multimodal LLM writes a short sequence of 6-DoF end-effector keyposes, a motion planner joins them with straight lines, and the agent looks at the result before writing the next sequence. <em>No training, no demonstrations at test time, no primitive library.</em> The agent decides how many keyposes a motion needs: one for a long free-space move, a few slow ones near contact, thirty when it draws.</p>
+</section>
+
+<!-- ───────────── DEMOS ───────────── -->
+<section class="demos" id="demos">
+  <div class="wrap head">
+    <p class="label">01 — Real robot</p>
+    <h2>One agent, one arm,<br><em>no practice runs.</em></h2>
+    <p class="note">Every task runs zero-shot on a UR12e with a parallel gripper: no demonstrations collected beforehand, no practice, no task-specific code, and the same agent as in simulation. Clips are time-lapsed; the real duration is on each card.</p>
+    <div class="filters" role="tablist">
+      <button class="on" data-f="all">All</button><button data-f="draw">Drawing</button><button data-f="build">Building</button><button data-f="home">Household</button>
+    </div>
+  </div>
+  <div class="grid wrap" id="grid"></div>
+
+  <div class="wrap typing">
+    <div class="typing-head">
+      <p class="label">Beyond the paper</p>
+      <h3>It also writes code. <em>One key at a time.</em></h3>
+      <p class="note">Asked for a program that prints the first ten Fibonacci numbers, the agent designs the shortest one it can, because every character costs a key press, types it on a physical keyboard, and presses F5 to run it.</p>
+    </div>
+    <div class="phones" id="phones"></div>
+  </div>
+
+  <div class="wrap more-head">
+    <p class="label">More tasks</p>
+    <h3>The rest of the task set, <em>from the robot's own camera.</em></h3>
+    <p class="note">Full episodes recorded by the fixed third-person camera the agent itself looks through. Robot motion plays in real time; only the pauses while the model thinks are fast-forwarded, and the badge shows which is which. The full Gomoku game is a plain time-lapse at the speed shown.</p>
+  </div>
+  <div class="grid cams wrap" id="cams"></div>
+</section>
+
+<!-- ───────────── IDEA ───────────── -->
+<section class="idea" id="idea">
+  <div class="wrap">
+    <p class="label">02 — The observation</p>
+    <h2>Manipulation is <em>sparse.</em></h2>
+    <div class="idea-grid">
+      <div class="idea-copy">
+        <p>We compressed 57,534 successful DROID teleoperation episodes into end-effector keyposes joined by straight lines. A grasp or release that takes 96 recorded actions needs about six keyposes, and over 91% of the travel lies on segments longer than 5&nbsp;cm.</p>
+        <p>So an agent does not need to emit a dense stream of actions. It needs to say where the gripper should be next, and in what order.</p>
+        <div class="facts">
+          <div><b>96 → 6</b><span>actions per grasp, as keyposes</span></div>
+          <div><b>91%</b><span>of travel on segments over 5 cm</span></div>
+          <div><b>0.90</b><span>rank correlation between SOLVE's keypose count and a demonstration's</span></div>
+        </div>
+      </div>
+      <figure class="tracks" id="tracks">
+        <div class="track">
+          <div class="track-top"><span>Step-wise LLM agent</span><span class="mono">154 calls · $21.1 / episode</span></div>
+          <svg viewBox="0 0 560 150" class="dense"><path id="curve" d="M20,120 C90,20 150,20 210,80 S330,140 380,70 S480,20 540,40" /><g id="densedots"></g></svg>
+          <p>One model call per small step. Latency and cost pile up, and errors compound.</p>
+        </div>
+        <div class="track ours">
+          <div class="track-top"><span>SOLVE</span><span class="mono">36 calls · $1.7 / episode</span></div>
+          <svg viewBox="0 0 560 150" class="sparse"><polyline pathLength="1" points="20,120 120,34 210,80 300,116 380,70 540,40"/><g><circle cx="20" cy="120" r="7"/><circle cx="120" cy="34" r="7"/><circle cx="210" cy="80" r="7"/><circle cx="300" cy="116" r="7"/><circle cx="380" cy="70" r="7"/><circle cx="540" cy="40" r="7"/></g></svg>
+          <p>A few keyposes per call, straight lines between them, a look at the result after each sequence.</p>
+        </div>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────── METHOD ───────────── -->
+<section class="method" id="method">
+  <div class="wrap">
+    <p class="label">03 — How it works</p>
+    <h2>Look, measure, <em>commit,</em> look again.</h2>
+    <ol class="loop">
+      <li><span class="n">1</span><h4>Observe</h4><p>The agent sees the current camera images, the arm state and the feedback from its last call.</p></li>
+      <li><span class="n">2</span><h4>Query a few pixels</h4><p>It names the handful of pixels its next move depends on. A tool returns their 3D positions, tagged with how they were measured: triangulated, reconstructed or stereo.</p></li>
+      <li><span class="n">3</span><h4>Write keyposes</h4><p>One call carries an ordered sequence of absolute 6-DoF poses with gripper commands, about one primitive such as approach, grasp, lift.</p></li>
+      <li><span class="n">4</span><h4>Execute</h4><p>A motion planner follows straight lines between keyposes. The gripper acts only on arrival. If a segment is unreachable, the agent is told which keypose failed.</p></li>
+    </ol>
+
+    <div class="pillars">
+      <article>
+        <p class="mono tag">move_eef</p>
+        <h4>Sparse, ordered keyposes</h4>
+        <p>Absolute targets, so the agent never plans the waypoints of a long move. It sets the count, spacing and speed itself: fast across free space, short and slow near contact.</p>
+      </article>
+      <article>
+        <p class="mono tag">query_points</p>
+        <h4>Sparse metric queries</h4>
+        <p>No dense depth map. Each queried pixel is triangulated across views by epipolar matching, with a multi-view reconstruction as fallback; on the real robot, stereo depth. The agent sees the source and decides how much to trust it.</p>
+      </article>
+      <article>
+        <p class="mono tag">update_experience</p>
+        <h4>Rules from its own rollouts</h4>
+        <p>On hard tasks the agent reflects on a few practice rollouts and the lessons are merged into at most five bounded rules per task. No parameters are updated. Real-robot tasks use none of this.</p>
+      </article>
+    </div>
+
+    <div class="code">
+      <div class="code-bar"><span></span><span></span><span></span><em>one model call</em></div>
+<pre><span class="c"># three keyposes: approach, descend and close, lift</span>
+<span class="k">move_eef</span>(sequence=[
+  {<span class="s">"pos"</span>: [0.412, -0.086, 0.180], <span class="s">"rpy"</span>: [180, 0, 90], <span class="s">"gripper"</span>: 1.0},
+  {<span class="s">"pos"</span>: [0.412, -0.086, 0.062], <span class="s">"gripper"</span>: 0.0, <span class="s">"ramp"</span>: 12},
+  {<span class="s">"pos"</span>: [0.412, -0.086, 0.220]}
+])</pre>
+      <p class="cap">Illustrative. Each keypose names only the dimensions it changes; the rest hold their value.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────── RESULTS ───────────── -->
+<section class="results" id="results">
+  <div class="wrap">
+    <p class="label">04 — Results</p>
+    <h2>Best on two benchmarks,<br><em>at a twelfth of the cost.</em></h2>
+
+    <div class="charts">
+      <figure class="chart">
+        <figcaption><b>RoboDojo-Sim</b><span>success rate, %, 42 tasks, official evaluation</span></figcaption>
+        <div class="bars" data-max="100">
+          <div class="bar ours" data-v="74.5"><span>SOLVE<small>LLM agent, keyposes</small></span></div>
+          <div class="bar" data-v="56.4"><span>GO-3 Nano Preview<small>agent + WAM</small></span></div>
+          <div class="bar" data-v="50.4"><span>PyRUA-Lean<small>agent, code</small></span></div>
+          <div class="bar" data-v="35.0"><span>WALL-OSS-1.0-lite<small>VLA</small></span></div>
+          <div class="bar" data-v="32.3"><span>VPP2<small>WAM</small></span></div>
+          <div class="bar" data-v="22.5"><span>GPT-6 Astra<small>same model, step-wise</small></span></div>
+        </div>
+      </figure>
+      <figure class="chart">
+        <figcaption><b>RoboLab-120</b><span>success rate, %, no demonstrations</span></figcaption>
+        <div class="bars" data-max="100">
+          <div class="bar ours" data-v="84.5"><span>SOLVE<small>LLM agent, keyposes</small></span></div>
+          <div class="bar" data-v="57.1"><span>SenseNova-RoboRSI<small>LLM agent</small></span></div>
+          <div class="bar" data-v="51.0"><span>Lakeside<small>LWM</small></span></div>
+          <div class="bar" data-v="49.2"><span>BiMind v0.5<small>VLA</small></span></div>
+          <div class="bar" data-v="42.9"><span>FLUX 3 Action<small>WAM</small></span></div>
+        </div>
+      </figure>
+    </div>
+
+    <div class="split">
+      <figure class="chart">
+        <figcaption><b>What each part adds</b><span>RoboDojo success rate, %, added one at a time</span></figcaption>
+        <div class="bars" data-max="100">
+          <div class="bar" data-v="22.9"><span>Step-wise baseline</span></div>
+          <div class="bar" data-v="49.5"><span>+ sparse keyposes</span></div>
+          <div class="bar" data-v="62.2"><span>+ point queries</span></div>
+          <div class="bar ours" data-v="68.3"><span>+ experience notes</span></div>
+        </div>
+        <p class="cap">Switching to keyposes alone more than doubles success and cuts model calls from 155 to 32 per episode.</p>
+      </figure>
+
+      <figure class="real">
+        <figcaption><b>Real UR12e, zero-shot</b><span>successful episodes per task family</span></figcaption>
+        <table>
+          <thead><tr><th>Task family</th><th>Tasks</th><th>Success</th><th>Calls</th><th>Min</th></tr></thead>
+          <tbody>
+            <tr><td>Long-horizon</td><td>3</td><td>15/15</td><td>20.3</td><td>4.8</td></tr>
+            <tr><td>Precision</td><td>2</td><td>7/10</td><td>19.3</td><td>5.1</td></tr>
+            <tr><td>Memory</td><td>1</td><td>5/5</td><td>15.0</td><td>3.8</td></tr>
+            <tr><td>Open-ended</td><td>5</td><td>22/25</td><td>24.0</td><td>7.9</td></tr>
+            <tr><td>Imitate one demo</td><td>2</td><td>10/10</td><td>25.0</td><td>8.7</td></tr>
+            <tr><td>Gomoku vs. a person</td><td>2</td><td>10/10</td><td>27.0</td><td>10.1</td></tr>
+            <tr><td>Shirt folding</td><td>1</td><td>6/10</td><td>17.0</td><td>3.5</td></tr>
+          </tbody>
+          <tfoot><tr><td>All</td><td>16</td><td>75/85</td><td>21.9</td><td>6.6</td></tr></tfoot>
+        </table>
+      </figure>
+    </div>
+
+    <div class="limits">
+      <h4>Where it fails</h4>
+      <p>Keyposes carry no force and no continuous feedback. On the real robot the ten failures are a shirt that slides along with the gripper, a peg insertion released before both pegs are seated, and drawings that would drive the wrist camera into the table. Each model call also takes seconds, so SOLVE suits quasi-static scenes. A learned low-level policy for contact-rich segments is the natural next step.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────── SIMULATION ───────────── -->
+<section class="sims" id="sim">
+  <div class="wrap head">
+    <p class="label">05 — In simulation</p>
+    <h2>Same agent, <em>three benchmarks.</em></h2>
+    <p class="note">The agent that drives the UR12e also runs three simulation benchmarks. Every clip below is a successful episode, time-lapsed.</p>
+  </div>
+  <div class="wrap sim-head">
+    <h3>RoboDojo <span class="mono">SOLVE + GPT-6 Astra · 74.5% official evaluation</span></h3>
+    <p class="note">Games, tools and long-horizon assembly on a bimanual robot, seen through the robot's head camera. These episodes come from a local run on layouts 0–4.</p>
+  </div>
+  <div class="grid cams dojo wrap" id="dojo"></div>
+  <div class="wrap sim-head">
+    <h3>RoboLab <span class="mono">120 tasks · 507 / 600 episodes</span></h3>
+    <p class="note">Cluttered tabletop tasks that need the instruction read carefully: which objects count, which bin, in what order.</p>
+  </div>
+  <div class="grid cams wrap" id="lab"></div>
+  <div class="wrap sim-head">
+    <h3>RoboTwin 2.0 <span class="mono">50 tasks · 94.6% easy · 95.0% hard</span></h3>
+    <p class="note">Bimanual tasks from the hard setting, where the table texture, lighting and distractor objects are randomized. For each task the agent reads one expert demonstration as a text-and-image guide.</p>
+  </div>
+  <div class="grid cams twin wrap" id="twin"></div>
+</section>
+
+<!-- ───────────── CITE ───────────── -->
+<section class="cite" id="cite">
+  <div class="wrap">
+    <p class="label">06 — Cite</p>
+    <div class="bib">
+      <button id="copy">Copy</button>
+<pre id="bibtex">@article{solve2026,
+  title   = {SOLVE: Sparse, Ordered Keyposes Make LLM Agents
+             Versatile and Efficient Robot Manipulators},
+  author  = {Li, Xiang and Zhou, Hongyu and Li, Ya-Li and Li, Tao and Zhang, Rui and
+             Lai, Junjie and Zhang, Weihua and Wang, Shengjin},
+  journal = {Under review},
+  year    = {2026}
+}</pre>
+    </div>
+  </div>
+</section>
+
+<footer class="wrap">
+  <span class="brand"><svg viewBox="0 0 44 16" aria-hidden="true"><polyline points="3,12 14,4 26,11 41,3"/><circle cx="3" cy="12" r="2.6"/><circle cx="14" cy="4" r="2.6"/><circle cx="26" cy="11" r="2.6"/><circle cx="41" cy="3" r="2.6"/></svg>SOLVE</span>
+  <span>Sparse, ordered keyposes for LLM robot agents.</span>
+</footer>
+
+<dialog id="box"><button class="x" aria-label="Close">×</button><video controls playsinline loop></video><span class="chip speed" hidden></span><p></p></dialog>
+
+<script src="ff.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
